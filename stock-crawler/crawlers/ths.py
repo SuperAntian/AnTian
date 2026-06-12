@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-同花顺爬虫
+同花顺爬虫（更新版本）
 """
 
 from crawlers.base import BaseCrawler
-from config import THS_BASE_URL
 from utils.logger import logger
 from utils.helpers import clean_title, clean_url, get_random_delay
 from bs4 import BeautifulSoup
@@ -18,7 +17,6 @@ class THSNewsCrawler(BaseCrawler):
     
     def __init__(self):
         super().__init__(name='THSNewsCrawler')
-        self.base_url = THS_BASE_URL
     
     def fetch(self, page=1, num_pages=3):
         """
@@ -33,9 +31,16 @@ class THSNewsCrawler(BaseCrawler):
         """
         all_news = []
         
+        base_url = 'https://news.10jqka.com.cn/'
+        
         for p in range(page, page + num_pages):
             try:
-                url = f'{self.base_url}/index_{p}.shtml'
+                # 构建URL
+                if p == 1:
+                    url = base_url
+                else:
+                    url = f'{base_url}today_list/index_{p}.shtml'
+                
                 resp = self.request(url)
                 if not resp:
                     continue
@@ -44,21 +49,41 @@ class THSNewsCrawler(BaseCrawler):
                 soup = BeautifulSoup(resp.text, 'lxml')
                 
                 # 查找新闻列表
-                news_items = soup.select('.m-news-list > li')
+                news_items = soup.select('.m-news-list li')
+                
+                if not news_items:
+                    logger.warning(f'同花顺: 第 {p} 页未找到新闻')
+                    continue
                 
                 for item in news_items:
                     try:
-                        title_elem = item.select_one('a')
-                        date_elem = item.select_one('.date')
-                        
-                        if not title_elem:
+                        # 找标题链接
+                        link = item.select_one('a')
+                        if not link:
                             continue
+                        
+                        title = clean_title(link.get_text(strip=True))
+                        href = link.get('href', '')
+                        
+                        # 处理相对URL
+                        if href and not href.startswith('http'):
+                            href = 'https://news.10jqka.com.cn' + href
+                        
+                        url = clean_url(href)
+                        
+                        if not title or not url:
+                            continue
+                        
+                        # 找时间
+                        time_elem = item.select_one('.date')
+                        publish_time = time_elem.get_text(strip=True) if time_elem else ''
                         
                         news = {
                             'source': '同花顺',
-                            'title': clean_title(title_elem.get('title', '')),
-                            'url': clean_url(title_elem.get('href', '')),
-                            'publish_time': date_elem.text if date_elem else ''
+                            'title': title,
+                            'url': url,
+                            'publish_time': publish_time,
+                            'summary': ''
                         }
                         all_news.append(news)
                     except Exception as item_e:
