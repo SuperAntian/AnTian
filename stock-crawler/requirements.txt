@@ -5,4 +5,4 @@ lxml==4.9.3
 fake-useragent==1.4.0
 apscheduler==3.10.4
 python-dotenv==1.0.0
-levistock==0.0.82
+levistock==0.1.5
