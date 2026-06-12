@@ -10,6 +10,8 @@ from crawlers.sina import SinaNewsCrawler
 from crawlers.eastmoney import EastmoneyNewsCrawler
 from crawlers.ths import THSNewsCrawler
 from crawlers.xueqiu import XueqiuNewsCrawler
+from crawlers.akshare_news import AkshareNewsCrawler
+from crawlers.tushare_news import TushareNewsCrawler
 from storage.csv_storage import CSVStorage
 from storage.db_storage import DBStorage
 from utils.logger import logger
@@ -29,6 +31,8 @@ def crawl_all_news():
         'eastmoney': EastmoneyNewsCrawler(),
         'ths': THSNewsCrawler(),
         'xueqiu': XueqiuNewsCrawler(),
+        'akshare': AkshareNewsCrawler(),
+        'tushare': TushareNewsCrawler(),
     }
     
     # 爬取各个数据源
@@ -37,13 +41,23 @@ def crawl_all_news():
             try:
                 logger.info(f'开始爬取 {crawler_name}...')
                 crawler = crawlers_map[crawler_name]
-                news = crawler.fetch(page=1, num_pages=PAGES_TO_CRAWL)
+                
+                # 处理不同类型的爬虫
+                if crawler_name in ['akshare', 'tushare']:
+                    # API类爬虫
+                    news = crawler.fetch(limit=50)
+                else:
+                    # 网站爬虫
+                    news = crawler.fetch(page=1, num_pages=PAGES_TO_CRAWL)
+                
                 all_news.extend(news)
                 logger.info(f'{crawler_name} 爬取完成，获得 {len(news)} 条新闻')
             except Exception as e:
                 logger.error(f'爬取 {crawler_name} 失败: {str(e)}')
             finally:
-                crawlers_map[crawler_name].close()
+                # 关闭连接
+                if hasattr(crawler, 'close'):
+                    crawler.close()
     
     # 存储数据
     if all_news:

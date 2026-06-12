@@ -72,16 +72,22 @@ XUEQIU_DEFAULT_STOCK = 'SH600519'  # 默认股票代码
 # 同花顺
 THS_BASE_URL = 'https://news.10jqka.com.cn/today_list'
 
+# Tushare
+TUSHARE_TOKEN = os.getenv('TUSHARE_TOKEN', 'demo')  # 需要正式配置
+
 # ==================== 爬虫爬取配置 ====================
 # 单次爬取的页数
 PAGES_TO_CRAWL = 3
 
 # 启用的数据源
+# 推荐优先级：akshare > tushare > sina, eastmoney, ths, xueqiu
 ENABLED_CRAWLERS = [
-    'sina',
-    'eastmoney',
-    'ths',
-    # 'xueqiu',  # 需要token，暂时注释
+    'akshare',    # Akshare API（推荐！不需要配置）
+    # 'tushare',   # Tushare API（需要token配置）
+    # 'sina',      # 新浪财经
+    # 'eastmoney', # 东方财富
+    # 'ths',       # 同花顺
+    # 'xueqiu',    # 雪球
 ]
 
 # ==================== 数据处理配置 ====================
